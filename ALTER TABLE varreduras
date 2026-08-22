@@ -1,0 +1,17 @@
+                                           Table "public.varreduras"
+       Column        |           Type           | Collation | Nullable |                Default                 
+---------------------+--------------------------+-----------+----------+----------------------------------------
+ id                  | integer                  |           | not null | nextval('varreduras_id_seq'::regclass)
+ site_id             | integer                  |           | not null | 
+ status              | character varying(50)    |           | not null | 
+ quantidade_paginas  | integer                  |           | not null | 
+ quantidade_contatos | integer                  |           | not null | 
+ inicio              | timestamp with time zone |           | not null | 
+ fim                 | timestamp with time zone |           |          | 
+Indexes:
+    "varreduras_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "varreduras_site_id_fkey" FOREIGN KEY (site_id) REFERENCES sites(id)
+Referenced by:
+    TABLE "contatos" CONSTRAINT "contatos_varredura_id_fkey" FOREIGN KEY (varredura_id) REFERENCES varreduras(id)
+

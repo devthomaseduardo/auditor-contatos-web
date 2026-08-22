@@ -1,3 +1,15 @@
+from datetime import datetime, timezone
+
+from sqlalchemy import select
+
+from auditor.database import SessionLocal
+from auditor.models import (
+    Site,
+    Varredura,
+    Contato,
+)
+
+
 class AuditorPipeline:
     @classmethod
     def from_crawler(cls, crawler):
@@ -5,18 +17,85 @@ class AuditorPipeline:
 
         instancia.crawler = crawler
         instancia.emails_processados = set()
+        instancia.sessao = None
+        instancia.site = None
+        instancia.varredura = None
 
         return instancia
 
     def open_spider(self):
         spider = self.crawler.spider
 
-        spider.logger.info("Pipeline iniciado")
+        spider.logger.info(
+            "Pipeline iniciado"
+        )
+
+        self.sessao = SessionLocal()
+
+        if spider.varredura_id:
+            self.varredura = self.sessao.get(
+                Varredura,
+                spider.varredura_id,
+            )
+
+            if not self.varredura:
+                raise ValueError(
+                    "Varredura não encontrada"
+                )
+
+            self.varredura.status = (
+                "em_andamento"
+            )
+
+            self.sessao.commit()
+
+            spider.logger.info(
+                f"Varredura "
+                f"{self.varredura.id} "
+                f"iniciada"
+            )
+
+            return
+
+        dominio = spider.allowed_domains[0]
+        url_inicial = spider.start_urls[0]
+
+        consulta = select(Site).where(
+            Site.dominio == dominio
+        )
+
+        self.site = self.sessao.scalar(
+            consulta
+        )
+
+        if not self.site:
+            self.site = Site(
+                dominio=dominio,
+                url=url_inicial,
+            )
+
+            self.sessao.add(self.site)
+            self.sessao.commit()
+            self.sessao.refresh(self.site)
+
+        self.varredura = Varredura(
+            site_id=self.site.id,
+            status="em_andamento",
+        )
+
+        self.sessao.add(self.varredura)
+        self.sessao.commit()
+        self.sessao.refresh(
+            self.varredura
+        )
 
     def process_item(self, item):
         spider = self.crawler.spider
 
         email = item.get("email")
+        pagina_origem = item.get(
+            "pagina_origem"
+        )
 
         if not email:
             return item
@@ -25,17 +104,27 @@ class AuditorPipeline:
 
         if email in self.emails_processados:
             spider.logger.info(
-                f"E-mail duplicado ignorado: {email}"
+                f"E-mail duplicado ignorado: "
+                f"{email}"
             )
 
             return None
 
         self.emails_processados.add(email)
 
+        contato = Contato(
+            varredura_id=self.varredura.id,
+            email=email,
+            pagina_origem=pagina_origem,
+        )
+
+        self.sessao.add(contato)
+        self.sessao.commit()
+
         item["email"] = email
 
         spider.logger.info(
-            f"E-mail validado: {email}"
+            f"E-mail salvo no banco: {email}"
         )
 
         return item
@@ -43,7 +132,31 @@ class AuditorPipeline:
     def close_spider(self):
         spider = self.crawler.spider
 
-        spider.logger.info(
-            f"Pipeline finalizado com "
-            f"{len(self.emails_processados)} e-mails únicos"
+        self.varredura.status = "concluida"
+
+        self.varredura.quantidade_paginas = (
+            len(spider.paginas_visitadas)
         )
+
+        self.varredura.quantidade_contatos = (
+            len(self.emails_processados)
+        )
+
+        self.varredura.fim = datetime.now(
+            timezone.utc
+        )
+
+        self.sessao.commit()
+
+        spider.logger.info(
+            f"Varredura "
+            f"{self.varredura.id} "
+            f"finalizada"
+        )
+
+        spider.logger.info(
+            f"{len(self.emails_processados)} "
+            f"contatos salvos"
+        )
+
+        self.sessao.close()

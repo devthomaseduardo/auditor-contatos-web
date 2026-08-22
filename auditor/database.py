@@ -1,0 +1,54 @@
+import os
+
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
+
+
+load_dotenv()
+
+
+DEFAULT_DATABASE_URL = (
+    "postgresql+psycopg://postgres:postgres"
+    "@localhost:5432/auditor_contatos"
+)
+
+
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    DEFAULT_DATABASE_URL,
+)
+
+
+def criar_engine(database_url: str) -> Engine:
+    argumentos = {}
+
+    if database_url.startswith("sqlite"):
+        argumentos["connect_args"] = {
+            "check_same_thread": False,
+        }
+
+    return create_engine(
+        database_url,
+        echo=False,
+        **argumentos,
+    )
+
+
+engine = criar_engine(DATABASE_URL)
+
+
+SessionLocal = sessionmaker(
+    bind=engine,
+    autoflush=False,
+    autocommit=False,
+)
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+def criar_tabelas():
+    Base.metadata.create_all(bind=engine)

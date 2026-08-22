@@ -31,7 +31,13 @@ class ContatosSpider(scrapy.Spider):
 
     limite_paginas = 10
 
-    def __init__(self, url=None, *args, **kwargs):
+    def __init__(
+        self,
+        url=None,
+        varredura_id=None,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
 
         if not url:
@@ -45,6 +51,12 @@ class ContatosSpider(scrapy.Spider):
 
         self.allowed_domains = [dominio.hostname]
 
+        self.varredura_id = (
+            int(varredura_id)
+            if varredura_id
+            else None
+        )
+
         self.emails_encontrados = set()
         self.paginas_visitadas = set()
 
@@ -55,8 +67,13 @@ class ContatosSpider(scrapy.Spider):
     def parse(self, response):
         yield from self.processar_pagina(response)
 
-        for link in response.css("a::attr(href)").getall():
-            if len(self.paginas_visitadas) >= self.limite_paginas:
+        for link in response.css(
+            "a::attr(href)"
+        ).getall():
+            if (
+                len(self.paginas_visitadas)
+                >= self.limite_paginas
+            ):
                 break
 
             if link.startswith(
@@ -81,14 +98,21 @@ class ContatosSpider(scrapy.Spider):
                     callback=self.analisar_pagina_importante,
                 )
 
-    def analisar_pagina_importante(self, response):
-        yield from self.processar_pagina(response)
+    def analisar_pagina_importante(
+        self,
+        response,
+    ):
+        yield from self.processar_pagina(
+            response
+        )
 
     def processar_pagina(self, response):
         if response.url in self.paginas_visitadas:
             return
 
-        self.paginas_visitadas.add(response.url)
+        self.paginas_visitadas.add(
+            response.url
+        )
 
         self.relatorio.adicionar_pagina(
             response.url
@@ -99,13 +123,18 @@ class ContatosSpider(scrapy.Spider):
         )
 
         emails_da_pagina = set(
-            self.padrao_email.findall(response.text)
+            self.padrao_email.findall(
+                response.text
+            )
         )
 
         for email in emails_da_pagina:
             email_normalizado = email.lower()
 
-            if email_normalizado in self.emails_encontrados:
+            if (
+                email_normalizado
+                in self.emails_encontrados
+            ):
                 continue
 
             self.emails_encontrados.add(
@@ -126,5 +155,6 @@ class ContatosSpider(scrapy.Spider):
         self.relatorio.salvar()
 
         self.logger.info(
-            "Relatório da varredura salvo em relatorio.json"
+            "Relatório da varredura salvo "
+            "em relatorio.json"
         )
