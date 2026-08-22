@@ -1,16 +1,9 @@
 {
-  "dominio": "localhost",
-  "quantidade_paginas": 2,
-  "quantidade_emails": 3,
-  "paginas_visitadas": [
-    "http://localhost:8000",
-    "http://localhost:8000/contato.html"
-  ],
-  "emails_encontrados": [
-    "comercial@empresateste.com.br",
-    "contato@empresateste.com.br",
-    "suporte@empresateste.com.br"
-  ],
-  "inicio": "2026-08-22T21:08:35.796756+00:00",
-  "fim": "2026-08-22T21:08:37.869180+00:00"
+  "dominio": "127.0.0.1",
+  "quantidade_paginas": 0,
+  "quantidade_emails": 0,
+  "paginas_visitadas": [],
+  "emails_encontrados": [],
+  "inicio": "2026-08-22T21:48:01.339559+00:00",
+  "fim": "2026-08-22T21:48:03.077024+00:00"
 }
