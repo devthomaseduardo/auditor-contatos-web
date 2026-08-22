@@ -10,8 +10,9 @@ class ContatosSpider(scrapy.Spider):
     name = "contatos"
 
     custom_settings = {
-        "ROBOTSTXT_OBEY": False,
+        "ROBOTSTXT_OBEY": True,
         "DOWNLOAD_DELAY": 1,
+        "HTTPERROR_ALLOW_ALL": True,
     }
 
     padrao_email = re.compile(
@@ -45,11 +46,17 @@ class ContatosSpider(scrapy.Spider):
                 "Informe uma URL para iniciar a análise"
             )
 
+        dominio = urlparse(url)
+        hostname = dominio.hostname
+
+        if not hostname:
+            raise ValueError(
+                "URL inválida para iniciar a análise"
+            )
+
         self.start_urls = [url]
 
-        dominio = urlparse(url)
-
-        self.allowed_domains = [dominio.hostname]
+        self.allowed_domains = [hostname]
 
         self.varredura_id = (
             int(varredura_id)
@@ -59,12 +66,34 @@ class ContatosSpider(scrapy.Spider):
 
         self.emails_encontrados = set()
         self.paginas_visitadas = set()
+        self.erros_varredura = []
 
         self.relatorio = RelatorioVarredura(
-            dominio.hostname
+            hostname
         )
 
+    @classmethod
+    def extrair_emails(cls, texto):
+        return {
+            email.lower()
+            for email in cls.padrao_email.findall(
+                texto or ""
+            )
+        }
+
+    def start_requests(self):
+        for url in self.start_urls:
+            yield scrapy.Request(
+                url,
+                callback=self.parse,
+                errback=self.registrar_erro,
+                dont_filter=True,
+            )
+
     def parse(self, response):
+        if self.resposta_com_erro(response):
+            return
+
         yield from self.processar_pagina(response)
 
         for link in response.css(
@@ -96,15 +125,50 @@ class ContatosSpider(scrapy.Spider):
                 yield scrapy.Request(
                     url_completa,
                     callback=self.analisar_pagina_importante,
+                    errback=self.registrar_erro,
                 )
 
     def analisar_pagina_importante(
         self,
         response,
     ):
+        if self.resposta_com_erro(response):
+            return
+
         yield from self.processar_pagina(
             response
         )
+
+    def resposta_com_erro(self, response):
+        if response.status < 400:
+            return False
+
+        self.adicionar_erro(
+            (
+                f"HTTP {response.status} ao acessar "
+                f"{response.url}"
+            )
+        )
+
+        return True
+
+    def registrar_erro(self, failure):
+        request = failure.request
+
+        self.adicionar_erro(
+            (
+                f"Falha ao acessar {request.url}: "
+                f"{failure.getErrorMessage()}"
+            )
+        )
+
+    def adicionar_erro(self, mensagem):
+        if mensagem in self.erros_varredura:
+            return
+
+        self.erros_varredura.append(mensagem)
+
+        self.logger.warning(mensagem)
 
     def processar_pagina(self, response):
         if response.url in self.paginas_visitadas:
@@ -122,31 +186,27 @@ class ContatosSpider(scrapy.Spider):
             f"Analisando página: {response.url}"
         )
 
-        emails_da_pagina = set(
-            self.padrao_email.findall(
-                response.text
-            )
+        emails_da_pagina = self.extrair_emails(
+            response.text
         )
 
         for email in emails_da_pagina:
-            email_normalizado = email.lower()
-
             if (
-                email_normalizado
+                email
                 in self.emails_encontrados
             ):
                 continue
 
             self.emails_encontrados.add(
-                email_normalizado
+                email
             )
 
             self.relatorio.adicionar_email(
-                email_normalizado
+                email
             )
 
             yield {
-                "email": email_normalizado,
+                "email": email,
                 "pagina_origem": response.url,
             }
 

@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 
+from scrapy.exceptions import DropItem
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from auditor.database import SessionLocal
 from auditor.models import (
@@ -46,6 +48,7 @@ class AuditorPipeline:
             self.varredura.status = (
                 "em_andamento"
             )
+            self.varredura.erro = None
 
             self.sessao.commit()
 
@@ -108,7 +111,9 @@ class AuditorPipeline:
                 f"{email}"
             )
 
-            return None
+            raise DropItem(
+                f"E-mail duplicado: {email}"
+            )
 
         self.emails_processados.add(email)
 
@@ -119,7 +124,15 @@ class AuditorPipeline:
         )
 
         self.sessao.add(contato)
-        self.sessao.commit()
+
+        try:
+            self.sessao.commit()
+        except IntegrityError as erro:
+            self.sessao.rollback()
+
+            raise DropItem(
+                f"E-mail duplicado no banco: {email}"
+            ) from erro
 
         item["email"] = email
 
@@ -132,26 +145,53 @@ class AuditorPipeline:
     def close_spider(self):
         spider = self.crawler.spider
 
-        self.varredura.status = "concluida"
+        if not self.varredura:
+            if self.sessao:
+                self.sessao.close()
 
-        self.varredura.quantidade_paginas = (
-            len(spider.paginas_visitadas)
+            return
+
+        quantidade_paginas = len(
+            spider.paginas_visitadas
+        )
+        erros = getattr(
+            spider,
+            "erros_varredura",
+            [],
         )
 
+        self.varredura.quantidade_paginas = (
+            quantidade_paginas
+        )
         self.varredura.quantidade_contatos = (
             len(self.emails_processados)
         )
-
         self.varredura.fim = datetime.now(
             timezone.utc
         )
+
+        if quantidade_paginas == 0:
+            self.varredura.status = "erro"
+            self.varredura.erro = (
+                "; ".join(erros[:3])
+                if erros
+                else (
+                    "Nenhuma página pública foi "
+                    "processada. Verifique se o "
+                    "domínio é acessível e autorizado."
+                )
+            )
+        else:
+            self.varredura.status = "concluida"
+            self.varredura.erro = None
 
         self.sessao.commit()
 
         spider.logger.info(
             f"Varredura "
             f"{self.varredura.id} "
-            f"finalizada"
+            f"finalizada com status "
+            f"{self.varredura.status}"
         )
 
         spider.logger.info(

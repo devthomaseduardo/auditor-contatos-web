@@ -6,6 +6,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import (
     Mapped,
@@ -108,6 +109,13 @@ class Varredura(Base):
 
 class Contato(Base):
     __tablename__ = "contatos"
+    __table_args__ = (
+        UniqueConstraint(
+            "varredura_id",
+            "email",
+            name="uq_contatos_varredura_email",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(
         Integer,

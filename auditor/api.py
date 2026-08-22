@@ -1,5 +1,6 @@
 import subprocess
 import sys
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
@@ -11,18 +12,58 @@ from fastapi import (
 from pydantic import BaseModel, HttpUrl
 from sqlalchemy import select
 
-from auditor.database import SessionLocal
+from auditor.database import SessionLocal, criar_tabelas
 from auditor.models import Contato, Site, Varredura
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    criar_tabelas()
+    yield
 
 
 app = FastAPI(
     title="Auditor de Contatos Web",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 
 class CriarVarreduraRequest(BaseModel):
     url: HttpUrl
+
+
+def limitar_mensagem_erro(
+    mensagem: str,
+    limite: int = 4000,
+) -> str:
+    mensagem_limpa = mensagem.strip()
+
+    if not mensagem_limpa:
+        return "Erro desconhecido durante a varredura."
+
+    if len(mensagem_limpa) <= limite:
+        return mensagem_limpa
+
+    return mensagem_limpa[-limite:]
+
+
+def marcar_varredura_em_andamento(
+    varredura_id: int,
+):
+    with SessionLocal() as sessao:
+        varredura = sessao.get(
+            Varredura,
+            varredura_id,
+        )
+
+        if not varredura:
+            return
+
+        varredura.status = "em_andamento"
+        varredura.erro = None
+
+        sessao.commit()
 
 
 def marcar_varredura_com_erro(
@@ -39,7 +80,9 @@ def marcar_varredura_com_erro(
             return
 
         varredura.status = "erro"
-        varredura.erro = mensagem
+        varredura.erro = limitar_mensagem_erro(
+            mensagem
+        )
         varredura.fim = datetime.now(
             timezone.utc
         )
@@ -51,6 +94,10 @@ def executar_varredura(
     varredura_id: int,
     url: str,
 ):
+    marcar_varredura_em_andamento(
+        varredura_id
+    )
+
     comando = [
         sys.executable,
         "-m",
@@ -72,9 +119,9 @@ def executar_varredura(
         )
 
         if resultado.returncode != 0:
-            mensagem_erro = (
+            mensagem_erro = limitar_mensagem_erro(
                 resultado.stderr.strip()
-                or "Erro desconhecido durante a varredura."
+                or resultado.stdout.strip()
             )
 
             marcar_varredura_com_erro(
@@ -91,6 +138,22 @@ def executar_varredura(
             ),
         )
 
+    except Exception as erro:
+        marcar_varredura_com_erro(
+            varredura_id,
+            str(erro),
+        )
+
+
+def executar_varredura_background(
+    varredura_id: int,
+    url: str,
+):
+    try:
+        executar_varredura(
+            varredura_id,
+            url,
+        )
     except Exception as erro:
         marcar_varredura_com_erro(
             varredura_id,
@@ -278,7 +341,7 @@ def criar_varredura(
         varredura_id = varredura.id
 
     background_tasks.add_task(
-        executar_varredura,
+        executar_varredura_background,
         varredura_id,
         url,
     )

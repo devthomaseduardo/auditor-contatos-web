@@ -6,10 +6,10 @@ SPIDER_MODULES = ["auditor.spiders"]
 NEWSPIDER_MODULE = "auditor.spiders"
 
 
-# Respeita o robots.txt dos sites.
-# No teste local deixamos False.
-# Quando começarmos a testar sites reais, vamos revisar esta configuração.
-ROBOTSTXT_OBEY = False
+# Respeita o robots.txt dos sites por padrão.
+# Este projeto deve ser usado apenas em páginas públicas
+# e domínios em que exista autorização para varredura.
+ROBOTSTXT_OBEY = True
 
 
 # Tempo de espera entre as requisições para o mesmo domínio.
