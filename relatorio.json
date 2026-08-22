@@ -1,0 +1,16 @@
+{
+  "dominio": "localhost",
+  "quantidade_paginas": 2,
+  "quantidade_emails": 3,
+  "paginas_visitadas": [
+    "http://localhost:8000",
+    "http://localhost:8000/contato.html"
+  ],
+  "emails_encontrados": [
+    "comercial@empresateste.com.br",
+    "contato@empresateste.com.br",
+    "suporte@empresateste.com.br"
+  ],
+  "inicio": "2026-08-22T20:55:19.402554+00:00",
+  "fim": "2026-08-22T20:55:20.633593+00:00"
+}

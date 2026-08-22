@@ -1,0 +1,5 @@
+[
+{"email": "contato@empresateste.com.br", "pagina_origem": "http://localhost:8000"},
+{"email": "suporte@empresateste.com.br", "pagina_origem": "http://localhost:8000/contato.html"},
+{"email": "comercial@empresateste.com.br", "pagina_origem": "http://localhost:8000/contato.html"}
+]
