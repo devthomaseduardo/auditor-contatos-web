@@ -33,6 +33,13 @@ class CriarVarreduraRequest(BaseModel):
     url: HttpUrl
 
 
+def obter_url_varredura(
+    varredura: Varredura,
+    site: Site,
+) -> str:
+    return varredura.url_inicial or site.url
+
+
 def limitar_mensagem_erro(
     mensagem: str,
     limite: int = 4000,
@@ -190,7 +197,10 @@ def listar_varreduras():
             {
                 "id": varredura.id,
                 "site": site.dominio,
-                "url": site.url,
+                "url": obter_url_varredura(
+                    varredura,
+                    site,
+                ),
                 "status": varredura.status,
                 "quantidade_paginas": (
                     varredura.quantidade_paginas
@@ -230,7 +240,10 @@ def buscar_varredura(
         return {
             "id": varredura.id,
             "site": site.dominio,
-            "url": site.url,
+            "url": obter_url_varredura(
+                varredura,
+                site,
+            ),
             "status": varredura.status,
             "quantidade_paginas": (
                 varredura.quantidade_paginas
@@ -331,6 +344,7 @@ def criar_varredura(
         varredura = Varredura(
             site_id=site.id,
             status="pendente",
+            url_inicial=url,
             erro=None,
         )
 

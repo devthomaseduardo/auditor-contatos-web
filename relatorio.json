@@ -1,9 +1,11 @@
 {
-  "dominio": "127.0.0.1",
-  "quantidade_paginas": 0,
+  "dominio": "hazap.com.br",
+  "quantidade_paginas": 1,
   "quantidade_emails": 0,
-  "paginas_visitadas": [],
+  "paginas_visitadas": [
+    "https://hazap.com.br/"
+  ],
   "emails_encontrados": [],
-  "inicio": "2026-08-22T21:48:01.339559+00:00",
-  "fim": "2026-08-22T21:48:03.077024+00:00"
+  "inicio": "2026-08-22T22:10:11.479543+00:00",
+  "fim": "2026-08-22T22:10:14.570521+00:00"
 }

@@ -40,6 +40,7 @@ def criar_varredura(api, SessionLocal):
         varredura = api.Varredura(
             site_id=site.id,
             status="pendente",
+            url_inicial="https://example.com",
         )
         sessao.add(varredura)
         sessao.commit()

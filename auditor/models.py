@@ -71,6 +71,11 @@ class Varredura(Base):
         default="em_andamento",
     )
 
+    url_inicial: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+    )
+
     quantidade_paginas: Mapped[int] = mapped_column(
         Integer,
         default=0,

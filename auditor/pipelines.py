@@ -84,6 +84,7 @@ class AuditorPipeline:
         self.varredura = Varredura(
             site_id=self.site.id,
             status="em_andamento",
+            url_inicial=url_inicial,
         )
 
         self.sessao.add(self.varredura)

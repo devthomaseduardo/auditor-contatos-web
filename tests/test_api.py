@@ -15,6 +15,7 @@ def criar_varredura(api, SessionLocal):
         varredura = api.Varredura(
             site_id=site.id,
             status="pendente",
+            url_inicial="https://example.invalid",
         )
         sessao.add(varredura)
         sessao.commit()
@@ -89,6 +90,47 @@ def test_criar_varredura_agenda_execucao_em_background(
     ).json()
 
     assert detalhe["status"] == "concluida"
+    assert detalhe["url"] == "https://example.com/"
+
+
+def test_varreduras_preservam_url_inicial_por_execucao(
+    api_context,
+    monkeypatch,
+):
+    api, client, _SessionLocal = api_context
+
+    monkeypatch.setattr(
+        api,
+        "executar_varredura_background",
+        lambda *_args: None,
+    )
+
+    primeira = client.post(
+        "/varreduras",
+        json={
+            "url": "https://example.com/index.html",
+        },
+    ).json()
+    segunda = client.post(
+        "/varreduras",
+        json={
+            "url": "https://example.com/nao-existe.html",
+        },
+    ).json()
+
+    detalhe_primeira = client.get(
+        f"/varreduras/{primeira['id']}"
+    ).json()
+    detalhe_segunda = client.get(
+        f"/varreduras/{segunda['id']}"
+    ).json()
+
+    assert detalhe_primeira["url"] == (
+        "https://example.com/index.html"
+    )
+    assert detalhe_segunda["url"] == (
+        "https://example.com/nao-existe.html"
+    )
 
 
 def test_executar_varredura_salva_erro_quando_scrapy_falha(

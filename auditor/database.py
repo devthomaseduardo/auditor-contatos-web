@@ -1,7 +1,7 @@
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -52,3 +52,34 @@ class Base(DeclarativeBase):
 
 def criar_tabelas():
     Base.metadata.create_all(bind=engine)
+
+    inspetor = inspect(engine)
+
+    if "varreduras" not in inspetor.get_table_names():
+        return
+
+    colunas = {
+        coluna["name"]
+        for coluna in inspetor.get_columns(
+            "varreduras"
+        )
+    }
+
+    if "url_inicial" not in colunas:
+        with engine.begin() as conexao:
+            conexao.execute(
+                text(
+                    "ALTER TABLE varreduras "
+                    "ADD COLUMN url_inicial VARCHAR(500)"
+                )
+            )
+            conexao.execute(
+                text(
+                    "UPDATE varreduras "
+                    "SET url_inicial = ("
+                    "SELECT sites.url FROM sites "
+                    "WHERE sites.id = varreduras.site_id"
+                    ") "
+                    "WHERE url_inicial IS NULL"
+                )
+            )
