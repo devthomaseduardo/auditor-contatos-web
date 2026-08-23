@@ -4,6 +4,16 @@ API backend para auditar páginas públicas de um domínio, localizar e-mails de
 
 Este projeto foi criado como MVP técnico de portfólio para demonstrar um fluxo real de crawler, API, persistência, execução em background, tratamento de erro, Docker e testes automatizados.
 
+## Demo online
+
+- API: <https://auditor-contatos-web.onrender.com>
+- Swagger: <https://auditor-contatos-web.onrender.com/docs>
+- Healthcheck: <https://auditor-contatos-web.onrender.com/health>
+- Histórico de varreduras: <https://auditor-contatos-web.onrender.com/varreduras>
+- Coleção Postman: [`docs/postman/auditor-contatos-web.postman_collection.json`](docs/postman/auditor-contatos-web.postman_collection.json)
+
+Observação: a API está hospedada no plano gratuito do Render. Depois de alguns minutos sem uso, a primeira requisição pode demorar um pouco porque o serviço precisa iniciar novamente.
+
 ## O que o projeto faz
 
 O Auditor de Contatos Web recebe uma URL pública, executa uma varredura controlada no mesmo domínio e procura e-mails visíveis no HTML das páginas. Ele prioriza páginas comuns de contato, como `contato`, `contact`, `sobre`, `about`, `suporte` e `support`.
@@ -37,6 +47,8 @@ Fluxo principal:
 6. O pipeline normaliza e deduplica os e-mails encontrados.
 7. O banco guarda sites, varreduras, contatos, datas, status e erro.
 8. A API expõe os resultados por endpoints REST.
+
+Ao acessar a raiz da API, `GET /`, o usuário é redirecionado para `/docs`, facilitando a demonstração pública do projeto.
 
 Status possíveis:
 
@@ -148,6 +160,12 @@ https://sua-api-publica.com/docs
 ```
 
 O passo a passo completo está em [docs/DEPLOY.md](docs/DEPLOY.md).
+
+Deploy atual:
+
+```text
+https://auditor-contatos-web.onrender.com
+```
 
 ## Rodando localmente sem Docker
 
@@ -306,7 +324,24 @@ Esse teste comprova que falhas não ficam silenciosas: a varredura termina com `
 
 Use apenas um domínio próprio, de cliente ou com autorização explícita.
 
-Exemplo com domínio próprio:
+Exemplo usando a API online:
+
+```bash
+BASE_URL=https://auditor-contatos-web.onrender.com
+
+VARREDURA_ID=$(curl -s -X POST "$BASE_URL/varreduras" \
+  -H 'Content-Type: application/json' \
+  -d '{"url":"https://thomaseduardo.com.br"}' | jq -r '.id')
+
+echo "Varredura criada: $VARREDURA_ID"
+
+sleep 8
+
+curl -s "$BASE_URL/varreduras/$VARREDURA_ID" | jq
+curl -s "$BASE_URL/varreduras/$VARREDURA_ID/contatos" | jq
+```
+
+Exemplo usando a API local:
 
 ```bash
 VARREDURA_ID=$(curl -s -X POST http://127.0.0.1:8010/varreduras \
@@ -471,6 +506,18 @@ requirements.txt
 
 ## Como apresentar no portfólio
 
+Título sugerido:
+
+```text
+Auditor de Contatos Web
+```
+
+Descrição curta:
+
+```text
+API backend em Python que recebe uma URL autorizada, executa uma varredura com Scrapy, extrai e-mails públicos, deduplica contatos, salva histórico em PostgreSQL e expõe os resultados por endpoints REST com FastAPI.
+```
+
 Pontos fortes para demonstrar:
 
 - API REST com documentação automática em `/docs`;
@@ -481,7 +528,24 @@ Pontos fortes para demonstrar:
 - PostgreSQL com SQLAlchemy;
 - Docker Compose para API + banco;
 - testes automatizados cobrindo fluxo principal;
+- deploy online no Render;
+- coleção Postman para demonstração;
 - uso responsável em páginas públicas e domínios autorizados.
+
+Links para apresentação:
+
+- API online: <https://auditor-contatos-web.onrender.com>
+- Swagger: <https://auditor-contatos-web.onrender.com/docs>
+- Healthcheck: <https://auditor-contatos-web.onrender.com/health>
+- Documentação dos endpoints: [`docs/API.md`](docs/API.md)
+- Guia Postman: [`docs/POSTMAN.md`](docs/POSTMAN.md)
+- Guia de deploy: [`docs/DEPLOY.md`](docs/DEPLOY.md)
+
+Stack para destacar:
+
+```text
+Python, FastAPI, Scrapy, SQLAlchemy, PostgreSQL, Docker, Pytest e Render.
+```
 
 Resumo curto:
 
