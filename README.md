@@ -19,6 +19,10 @@ Ao final da execução, a API permite consultar:
 
 O projeto não tem frontend próprio nesta versão. A documentação interativa da FastAPI em `/docs` já é suficiente para demonstrar o backend.
 
+Documentação técnica dos endpoints: [docs/API.md](docs/API.md).
+
+Coleção e guia do Postman: [docs/POSTMAN.md](docs/POSTMAN.md).
+
 ## Como funciona
 
 Fluxo principal:

@@ -1,0 +1,700 @@
+{
+  "info": {
+    "_postman_id": "5df51618-7d60-4e07-a221-02db2c27e8a8",
+    "name": "Auditor de Contatos Web",
+    "description": "Coleção oficial para testar a API do Auditor de Contatos Web. Inclui healthcheck, documentação OpenAPI, criação de varreduras, consulta de status, listagem de contatos e cenários de erro.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health e documentação",
+      "item": [
+        {
+          "name": "Healthcheck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status HTTP 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"API online\", function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql(\"ok\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Verifica se a API está online."
+          },
+          "response": []
+        },
+        {
+          "name": "OpenAPI JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status HTTP 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"retorna schema OpenAPI\", function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.openapi).to.exist;",
+                  "  pm.expect(json.info.title).to.eql(\"Auditor de Contatos Web\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/openapi.json",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "openapi.json"
+              ]
+            },
+            "description": "Retorna o contrato OpenAPI gerado pela FastAPI."
+          },
+          "response": []
+        },
+        {
+          "name": "Swagger UI",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status HTTP 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"retorna HTML\", function () {",
+                  "  pm.expect(pm.response.text()).to.include(\"Swagger UI\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/docs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "docs"
+              ]
+            },
+            "description": "Abre a documentação interativa da FastAPI."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Demonstração local",
+      "description": "Fluxo recomendado para demonstrar o projeto usando o site local em teste/.",
+      "item": [
+        {
+          "name": "Criar varredura local",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status HTTP 202\", function () {",
+                  "  pm.response.to.have.status(202);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"varredura criada\", function () {",
+                  "  pm.expect(json.id).to.be.a(\"number\");",
+                  "  pm.expect(json.status).to.eql(\"pendente\");",
+                  "});",
+                  "",
+                  "pm.environment.set(\"varredura_id\", json.id);",
+                  "pm.environment.set(\"ultima_url_varredura\", json.url);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"{{local_site_url}}/index.html\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/varreduras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "varreduras"
+              ]
+            },
+            "description": "Cria uma varredura usando o site local servido por `python -m http.server 8765 -d teste`."
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar varredura local",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status HTTP 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"status conhecido\", function () {",
+                  "  pm.expect([\"pendente\", \"em_andamento\", \"concluida\", \"erro\"]).to.include(json.status);",
+                  "});",
+                  "",
+                  "pm.test(\"URL inicial preservada\", function () {",
+                  "  pm.expect(json.url).to.eql(pm.environment.get(\"ultima_url_varredura\"));",
+                  "});",
+                  "",
+                  "if (json.status === \"concluida\") {",
+                  "  pm.test(\"varredura local encontrou contatos\", function () {",
+                  "    pm.expect(json.quantidade_paginas).to.be.at.least(1);",
+                  "    pm.expect(json.quantidade_contatos).to.be.at.least(1);",
+                  "    pm.expect(json.erro).to.eql(null);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/varreduras/{{varredura_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "varreduras",
+                "{{varredura_id}}"
+              ]
+            },
+            "description": "Consulta o status da varredura local. Repita após alguns segundos até aparecer `concluida` ou `erro`."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar contatos da varredura local",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status HTTP 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"retorna lista\", function () {",
+                  "  pm.expect(json).to.be.an(\"array\");",
+                  "});",
+                  "",
+                  "if (json.length > 0) {",
+                  "  pm.test(\"contato tem campos esperados\", function () {",
+                  "    pm.expect(json[0]).to.have.property(\"id\");",
+                  "    pm.expect(json[0]).to.have.property(\"email\");",
+                  "    pm.expect(json[0]).to.have.property(\"pagina_origem\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/varreduras/{{varredura_id}}/contatos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "varreduras",
+                "{{varredura_id}}",
+                "contatos"
+              ]
+            },
+            "description": "Lista os e-mails encontrados na varredura local."
+          },
+          "response": []
+        },
+        {
+          "name": "Criar varredura local com erro 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status HTTP 202\", function () {",
+                  "  pm.response.to.have.status(202);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"varredura de erro criada\", function () {",
+                  "  pm.expect(json.id).to.be.a(\"number\");",
+                  "  pm.expect(json.status).to.eql(\"pendente\");",
+                  "});",
+                  "",
+                  "pm.environment.set(\"erro_id\", json.id);",
+                  "pm.environment.set(\"ultima_url_erro\", json.url);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"{{local_site_url}}/nao-existe.html\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/varreduras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "varreduras"
+              ]
+            },
+            "description": "Cria uma varredura de erro controlado usando uma página inexistente no site local."
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar varredura local com erro",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status HTTP 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"URL de erro preservada\", function () {",
+                  "  pm.expect(json.url).to.eql(pm.environment.get(\"ultima_url_erro\"));",
+                  "});",
+                  "",
+                  "if (json.status === \"erro\") {",
+                  "  pm.test(\"erro persistido\", function () {",
+                  "    pm.expect(json.quantidade_paginas).to.eql(0);",
+                  "    pm.expect(json.quantidade_contatos).to.eql(0);",
+                  "    pm.expect(json.erro).to.include(\"HTTP 404\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/varreduras/{{erro_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "varreduras",
+                "{{erro_id}}"
+              ]
+            },
+            "description": "Consulta a varredura de erro. Repita após alguns segundos até o status aparecer como `erro`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Varreduras",
+      "item": [
+        {
+          "name": "Listar histórico",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status HTTP 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"retorna array\", function () {",
+                  "  pm.expect(pm.response.json()).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/varreduras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "varreduras"
+              ]
+            },
+            "description": "Lista todas as varreduras em ordem decrescente de ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Criar varredura em domínio real autorizado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status HTTP 202\", function () {",
+                  "  pm.response.to.have.status(202);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.environment.set(\"varredura_id\", json.id);",
+                  "pm.environment.set(\"ultima_url_varredura\", json.url);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"{{url_real_autorizada}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/varreduras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "varreduras"
+              ]
+            },
+            "description": "Cria uma varredura em domínio real autorizado. Ajuste `url_real_autorizada` no environment antes de usar."
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar varredura por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status HTTP 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"campos principais existem\", function () {",
+                  "  pm.expect(json).to.have.property(\"id\");",
+                  "  pm.expect(json).to.have.property(\"site\");",
+                  "  pm.expect(json).to.have.property(\"url\");",
+                  "  pm.expect(json).to.have.property(\"status\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/varreduras/{{varredura_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "varreduras",
+                "{{varredura_id}}"
+              ]
+            },
+            "description": "Consulta uma varredura usando a variável `varredura_id`."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar contatos por varredura",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status HTTP 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"retorna array\", function () {",
+                  "  pm.expect(pm.response.json()).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/varreduras/{{varredura_id}}/contatos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "varreduras",
+                "{{varredura_id}}",
+                "contatos"
+              ]
+            },
+            "description": "Lista os contatos encontrados na varredura definida pela variável `varredura_id`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Validações de erro",
+      "item": [
+        {
+          "name": "Criar varredura com URL inválida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status HTTP 422\", function () {",
+                  "  pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"retorna detalhes de validação\", function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.detail).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"site-sem-protocolo.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/varreduras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "varreduras"
+              ]
+            },
+            "description": "Demonstra validação do Pydantic para URL sem protocolo."
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar varredura inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status HTTP 404\", function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"mensagem esperada\", function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.detail).to.eql(\"Varredura não encontrada\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/varreduras/999999",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "varreduras",
+                "999999"
+              ]
+            },
+            "description": "Demonstra resposta 404 para uma varredura que não existe."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar contatos de varredura inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status HTTP 404\", function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"mensagem esperada\", function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.detail).to.eql(\"Varredura não encontrada\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/varreduras/999999/contatos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "varreduras",
+                "999999",
+                "contatos"
+              ]
+            },
+            "description": "Demonstra resposta 404 ao listar contatos de uma varredura inexistente."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": []
+}

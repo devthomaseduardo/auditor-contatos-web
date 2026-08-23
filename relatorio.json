@@ -1,11 +1,17 @@
 {
-  "dominio": "hazap.com.br",
-  "quantidade_paginas": 1,
+  "dominio": "www.python.org",
+  "quantidade_paginas": 7,
   "quantidade_emails": 0,
   "paginas_visitadas": [
-    "https://hazap.com.br/"
+    "https://www.python.org/",
+    "https://www.python.org/about/",
+    "https://www.python.org/about/apps/",
+    "https://www.python.org/about/gettingstarted/",
+    "https://www.python.org/about/help/",
+    "https://www.python.org/about/legal/",
+    "https://www.python.org/about/quotes/"
   ],
   "emails_encontrados": [],
-  "inicio": "2026-08-22T22:10:11.479543+00:00",
-  "fim": "2026-08-22T22:10:14.570521+00:00"
+  "inicio": "2026-08-22T22:15:21.155331+00:00",
+  "fim": "2026-08-22T22:15:31.249491+00:00"
 }
