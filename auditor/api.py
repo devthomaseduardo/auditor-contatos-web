@@ -9,6 +9,7 @@ from fastapi import (
     FastAPI,
     HTTPException,
 )
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, HttpUrl
 from sqlalchemy import select
 
@@ -166,6 +167,11 @@ def executar_varredura_background(
             varredura_id,
             str(erro),
         )
+
+
+@app.get("/", include_in_schema=False)
+def redirecionar_para_docs():
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health")

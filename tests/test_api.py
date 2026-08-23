@@ -35,6 +35,18 @@ def test_health(api_context):
     }
 
 
+def test_raiz_redireciona_para_docs(api_context):
+    _api, client, _SessionLocal = api_context
+
+    resposta = client.get(
+        "/",
+        follow_redirects=False,
+    )
+
+    assert resposta.status_code == 307
+    assert resposta.headers["location"] == "/docs"
+
+
 def test_criar_varredura_agenda_execucao_em_background(
     api_context,
     monkeypatch,
