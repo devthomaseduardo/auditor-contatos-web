@@ -18,6 +18,14 @@ Ambiente Docker padrão:
 http://localhost:8000
 ```
 
+Ambiente publicado:
+
+```text
+https://sua-api-publica.com
+```
+
+Para publicar a API, siga o guia [DEPLOY.md](DEPLOY.md).
+
 ## Documentação interativa
 
 A FastAPI gera documentação automática:

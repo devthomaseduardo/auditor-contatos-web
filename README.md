@@ -23,6 +23,8 @@ Documentação técnica dos endpoints: [docs/API.md](docs/API.md).
 
 Coleção e guia do Postman: [docs/POSTMAN.md](docs/POSTMAN.md).
 
+Guia para deixar a API online: [docs/DEPLOY.md](docs/DEPLOY.md).
+
 ## Como funciona
 
 Fluxo principal:
@@ -121,6 +123,31 @@ O `docker-compose.yml` cria dois serviços:
 
 - `api`: FastAPI + Scrapy
 - `db`: PostgreSQL
+
+## Deploy
+
+Para deixar a API no ar, o caminho mais simples para portfólio é publicar pelo GitHub usando **Render** ou **Railway** com o `Dockerfile` da raiz e um PostgreSQL gerenciado.
+
+Variáveis mínimas no ambiente de produção:
+
+```env
+DATABASE_URL=postgresql+psycopg://usuario:senha@host:5432/banco
+PORT=8000
+```
+
+Depois do deploy, valide:
+
+```bash
+curl -s https://sua-api-publica.com/health
+```
+
+Abra também:
+
+```text
+https://sua-api-publica.com/docs
+```
+
+O passo a passo completo está em [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Rodando localmente sem Docker
 

@@ -57,6 +57,26 @@ Se usar outra porta na API, altere `base_url`.
 
 Se usar outro site local, altere `local_site_url`.
 
+## Usar com a API publicada
+
+Depois de publicar a API, altere a variável `base_url` do environment para a URL pública.
+
+Exemplo:
+
+```text
+https://sua-api-publica.com
+```
+
+Com isso, as mesmas requisições da coleção passam a chamar a API online.
+
+Para conferir rapidamente, envie:
+
+1. `Healthcheck`
+2. `Swagger UI`
+3. `Criar varredura em domínio real autorizado`
+
+O guia de deploy está em [DEPLOY.md](DEPLOY.md).
+
 ## Ordem recomendada para demonstrar
 
 Use a pasta `Health e documentação`:
