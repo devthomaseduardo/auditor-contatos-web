@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Auditor de Contatos Web",
-    version="1.0.0",
+    version="1.1.0",
     lifespan=lifespan,
 )
 
@@ -39,6 +39,20 @@ def obter_url_varredura(
     site: Site,
 ) -> str:
     return varredura.url_inicial or site.url
+
+
+def serializar_contato(contato: Contato) -> dict:
+    return {
+        "id": contato.id,
+        "tipo": contato.tipo,
+        "valor": contato.valor,
+        "email": (
+            contato.valor
+            if contato.tipo == "email"
+            else None
+        ),
+        "pagina_origem": contato.pagina_origem,
+    }
 
 
 def limitar_mensagem_erro(
@@ -297,13 +311,7 @@ def listar_contatos(
         ).all()
 
         return [
-            {
-                "id": contato.id,
-                "email": contato.email,
-                "pagina_origem": (
-                    contato.pagina_origem
-                ),
-            }
+            serializar_contato(contato)
             for contato in contatos
         ]
 

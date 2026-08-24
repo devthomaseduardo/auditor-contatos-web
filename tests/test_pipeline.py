@@ -104,6 +104,102 @@ def test_pipeline_salva_email_normalizado_e_ignora_duplicado(
         assert varredura.quantidade_paginas == 1
         assert varredura.quantidade_contatos == 1
         assert contatos[0].email == "contato@example.com"
+        assert contatos[0].tipo == "email"
+        assert contatos[0].valor == "contato@example.com"
+
+
+def test_pipeline_salva_telefone_e_rede_social(
+    api_context,
+):
+    api, _client, SessionLocal = api_context
+    from auditor.pipelines import AuditorPipeline
+
+    varredura_id = criar_varredura(
+        api,
+        SessionLocal,
+    )
+    spider = criar_spider_fake(
+        varredura_id,
+        paginas_visitadas={
+            "https://example.com/contato",
+        },
+    )
+    pipeline = AuditorPipeline.from_crawler(
+        SimpleNamespace(spider=spider)
+    )
+
+    pipeline.open_spider()
+
+    telefone = pipeline.process_item(
+        {
+            "tipo": "telefone",
+            "valor": "+5511912345678",
+            "pagina_origem": (
+                "https://example.com/contato"
+            ),
+        }
+    )
+    instagram = pipeline.process_item(
+        {
+            "tipo": "instagram",
+            "valor": (
+                "https://instagram.com/empresa"
+            ),
+            "pagina_origem": (
+                "https://example.com/contato"
+            ),
+        }
+    )
+
+    assert telefone["tipo"] == "telefone"
+    assert "email" not in telefone
+    assert instagram["tipo"] == "instagram"
+
+    with pytest.raises(DropItem):
+        pipeline.process_item(
+            {
+                "tipo": "telefone",
+                "valor": "+5511912345678",
+                "pagina_origem": (
+                    "https://example.com/sobre"
+                ),
+            }
+        )
+
+    pipeline.close_spider()
+
+    with SessionLocal() as sessao:
+        varredura = sessao.get(
+            api.Varredura,
+            varredura_id,
+        )
+        contatos = (
+            sessao.query(api.Contato)
+            .order_by(api.Contato.id)
+            .all()
+        )
+
+        assert varredura.status == "concluida"
+        assert varredura.quantidade_contatos == 2
+        assert [
+            (
+                contato.tipo,
+                contato.valor,
+            )
+            for contato in contatos
+        ] == [
+            (
+                "telefone",
+                "+5511912345678",
+            ),
+            (
+                "instagram",
+                "https://instagram.com/empresa",
+            ),
+        ]
+        assert contatos[0].email.startswith(
+            "telefone:"
+        )
 
 
 def test_pipeline_marca_erro_quando_nenhuma_pagina_foi_processada(

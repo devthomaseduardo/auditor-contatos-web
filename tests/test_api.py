@@ -198,11 +198,23 @@ def test_listar_contatos_da_varredura(api_context):
         contato = api.Contato(
             varredura_id=varredura_id,
             email="contato@example.invalid",
+            tipo="email",
+            valor="contato@example.invalid",
+            pagina_origem=(
+                "https://example.invalid/contato"
+            ),
+        )
+        telefone = api.Contato(
+            varredura_id=varredura_id,
+            email="telefone:abc123",
+            tipo="telefone",
+            valor="+5511912345678",
             pagina_origem=(
                 "https://example.invalid/contato"
             ),
         )
         sessao.add(contato)
+        sessao.add(telefone)
         sessao.commit()
 
     resposta = client.get(
@@ -213,9 +225,20 @@ def test_listar_contatos_da_varredura(api_context):
     assert resposta.json() == [
         {
             "id": 1,
+            "tipo": "email",
+            "valor": "contato@example.invalid",
             "email": "contato@example.invalid",
             "pagina_origem": (
                 "https://example.invalid/contato"
             ),
-        }
+        },
+        {
+            "id": 2,
+            "tipo": "telefone",
+            "valor": "+5511912345678",
+            "email": None,
+            "pagina_origem": (
+                "https://example.invalid/contato"
+            ),
+        },
     ]

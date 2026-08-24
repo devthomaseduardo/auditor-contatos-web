@@ -249,6 +249,8 @@
                   "if (json.length > 0) {",
                   "  pm.test(\"contato tem campos esperados\", function () {",
                   "    pm.expect(json[0]).to.have.property(\"id\");",
+                  "    pm.expect(json[0]).to.have.property(\"tipo\");",
+                  "    pm.expect(json[0]).to.have.property(\"valor\");",
                   "    pm.expect(json[0]).to.have.property(\"email\");",
                   "    pm.expect(json[0]).to.have.property(\"pagina_origem\");",
                   "  });",
@@ -271,7 +273,7 @@
                 "contatos"
               ]
             },
-            "description": "Lista os e-mails encontrados na varredura local."
+            "description": "Lista os contatos encontrados na varredura local, incluindo e-mail, telefone, WhatsApp e redes sociais quando disponíveis."
           },
           "response": []
         },

@@ -1,6 +1,6 @@
 # Auditor de Contatos Web
 
-API backend para auditar páginas públicas de um domínio, localizar e-mails de contato e registrar o histórico das varreduras em banco de dados.
+API backend para auditar páginas públicas de um domínio, localizar contatos públicos e registrar o histórico das varreduras em banco de dados.
 
 Este projeto foi criado como MVP técnico de portfólio para demonstrar um fluxo real de crawler, API, persistência, execução em background, tratamento de erro, Docker e testes automatizados.
 
@@ -16,7 +16,7 @@ Observação: a API está hospedada no plano gratuito do Render. Depois de algun
 
 ## O que o projeto faz
 
-O Auditor de Contatos Web recebe uma URL pública, executa uma varredura controlada no mesmo domínio e procura e-mails visíveis no HTML das páginas. Ele prioriza páginas comuns de contato, como `contato`, `contact`, `sobre`, `about`, `suporte` e `support`.
+O Auditor de Contatos Web recebe uma URL pública, executa uma varredura controlada no mesmo domínio e procura e-mails, telefones, links de WhatsApp e redes sociais visíveis nas páginas. Ele prioriza páginas comuns de contato, como `contato`, `contact`, `sobre`, `about`, `suporte` e `support`.
 
 Ao final da execução, a API permite consultar:
 
@@ -25,7 +25,7 @@ Ao final da execução, a API permite consultar:
 - quantidade de páginas processadas;
 - quantidade de contatos encontrados;
 - mensagens de erro;
-- lista de e-mails encontrados e a página de origem.
+- lista de contatos encontrados, tipo do contato e página de origem.
 
 O projeto não tem frontend próprio nesta versão. A documentação interativa da FastAPI em `/docs` já é suficiente para demonstrar o backend.
 
@@ -44,7 +44,7 @@ Fluxo principal:
 3. A FastAPI agenda a execução em background.
 4. O background executa o spider Scrapy em subprocesso.
 5. O spider visita a URL inicial e busca links importantes dentro do mesmo domínio.
-6. O pipeline normaliza e deduplica os e-mails encontrados.
+6. O pipeline normaliza e deduplica os contatos encontrados.
 7. O banco guarda sites, varreduras, contatos, datas, status e erro.
 8. A API expõe os resultados por endpoints REST.
 
@@ -219,8 +219,8 @@ Esse teste mostra:
 
 - URL inicial processada;
 - descoberta de link para página de contato;
-- extração de e-mails;
-- deduplicação de e-mail repetido;
+- extração de e-mails, telefones, WhatsApp e redes sociais;
+- deduplicação de contatos repetidos;
 - gravação no banco;
 - consulta via API.
 
@@ -269,7 +269,7 @@ Resultado esperado no teste local:
 {
   "status": "concluida",
   "quantidade_paginas": 2,
-  "quantidade_contatos": 3,
+  "quantidade_contatos": 8,
   "erro": null
 }
 ```
@@ -279,15 +279,51 @@ Contatos esperados:
 ```json
 [
   {
+    "tipo": "email",
+    "valor": "contato@empresateste.com.br",
     "email": "contato@empresateste.com.br",
     "pagina_origem": "http://127.0.0.1:8765/index.html"
   },
   {
+    "tipo": "telefone",
+    "valor": "+551140028922",
+    "email": null,
+    "pagina_origem": "http://127.0.0.1:8765/index.html"
+  },
+  {
+    "tipo": "instagram",
+    "valor": "https://www.instagram.com/empresa.teste",
+    "email": null,
+    "pagina_origem": "http://127.0.0.1:8765/index.html"
+  },
+  {
+    "tipo": "email",
+    "valor": "comercial@empresateste.com.br",
+    "email": "comercial@empresateste.com.br",
+    "pagina_origem": "http://127.0.0.1:8765/contato.html"
+  },
+  {
+    "tipo": "email",
+    "valor": "suporte@empresateste.com.br",
     "email": "suporte@empresateste.com.br",
     "pagina_origem": "http://127.0.0.1:8765/contato.html"
   },
   {
-    "email": "comercial@empresateste.com.br",
+    "tipo": "telefone",
+    "valor": "+5511912345678",
+    "email": null,
+    "pagina_origem": "http://127.0.0.1:8765/contato.html"
+  },
+  {
+    "tipo": "whatsapp",
+    "valor": "+5511912345678",
+    "email": null,
+    "pagina_origem": "http://127.0.0.1:8765/contato.html"
+  },
+  {
+    "tipo": "linkedin",
+    "valor": "https://www.linkedin.com/company/empresa-teste",
+    "email": null,
     "pagina_origem": "http://127.0.0.1:8765/contato.html"
   }
 ]
@@ -423,7 +459,7 @@ Exemplo:
   "url": "http://127.0.0.1:8765/index.html",
   "status": "concluida",
   "quantidade_paginas": 2,
-  "quantidade_contatos": 3,
+  "quantidade_contatos": 8,
   "inicio": "2026-08-22T22:02:52.822812",
   "fim": "2026-08-22T22:02:56.709928",
   "erro": null
@@ -444,7 +480,16 @@ Exemplo:
 [
   {
     "id": 1,
+    "tipo": "email",
+    "valor": "contato@empresateste.com.br",
     "email": "contato@empresateste.com.br",
+    "pagina_origem": "http://127.0.0.1:8765/index.html"
+  },
+  {
+    "id": 2,
+    "tipo": "telefone",
+    "valor": "+551140028922",
+    "email": null,
     "pagina_origem": "http://127.0.0.1:8765/index.html"
   }
 ]
@@ -458,7 +503,7 @@ pytest
 
 A suíte cobre:
 
-- extração e normalização de e-mails;
+- extração e normalização de e-mails, telefones, WhatsApp e redes sociais;
 - deduplicação no spider;
 - deduplicação no pipeline;
 - criação de varredura;
@@ -490,7 +535,7 @@ auditor/
   relatorio.py        # Relatório JSON local gerado pela spider
   settings.py         # Configurações do Scrapy
   spiders/
-    contatos.py       # Spider de varredura e extração de e-mails
+    contatos.py       # Spider de varredura e extração de contatos
 tests/
   conftest.py
   test_api.py
@@ -515,7 +560,7 @@ Auditor de Contatos Web
 Descrição curta:
 
 ```text
-API backend em Python que recebe uma URL autorizada, executa uma varredura com Scrapy, extrai e-mails públicos, deduplica contatos, salva histórico em PostgreSQL e expõe os resultados por endpoints REST com FastAPI.
+API backend em Python que recebe uma URL autorizada, executa uma varredura com Scrapy, extrai contatos públicos, deduplica resultados, salva histórico em PostgreSQL e expõe os resultados por endpoints REST com FastAPI.
 ```
 
 Pontos fortes para demonstrar:
@@ -549,7 +594,7 @@ Python, FastAPI, Scrapy, SQLAlchemy, PostgreSQL, Docker, Pytest e Render.
 
 Resumo curto:
 
-> Backend em Python que recebe uma URL autorizada, executa uma varredura com Scrapy, extrai e-mails públicos, deduplica contatos, salva histórico em banco e expõe os resultados por API FastAPI.
+> Backend em Python que recebe uma URL autorizada, executa uma varredura com Scrapy, extrai contatos públicos, deduplica resultados, salva histórico em banco e expõe os resultados por API FastAPI.
 
 ## Status do MVP
 

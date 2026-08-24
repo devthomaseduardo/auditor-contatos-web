@@ -102,7 +102,7 @@ Resultado esperado na varredura local:
 {
   "status": "concluida",
   "quantidade_paginas": 2,
-  "quantidade_contatos": 3,
+  "quantidade_contatos": 8,
   "erro": null
 }
 ```

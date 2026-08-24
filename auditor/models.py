@@ -120,6 +120,12 @@ class Contato(Base):
             "email",
             name="uq_contatos_varredura_email",
         ),
+        UniqueConstraint(
+            "varredura_id",
+            "tipo",
+            "valor",
+            name="uq_contatos_varredura_tipo_valor",
+        ),
     )
 
     id: Mapped[int] = mapped_column(
@@ -135,6 +141,17 @@ class Contato(Base):
 
     email: Mapped[str] = mapped_column(
         String(320),
+        nullable=False,
+    )
+
+    tipo: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default="email",
+    )
+
+    valor: Mapped[str] = mapped_column(
+        String(500),
         nullable=False,
     )
 

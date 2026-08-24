@@ -111,7 +111,7 @@ Response:
 | `url` | string | URL inicial usada naquela varredura. |
 | `status` | string | Status atual da varredura. |
 | `quantidade_paginas` | integer | Total de páginas processadas. |
-| `quantidade_contatos` | integer | Total de e-mails únicos salvos. |
+| `quantidade_contatos` | integer | Total de contatos únicos salvos. |
 | `inicio` | string datetime | Data/hora de criação ou início. |
 | `fim` | string datetime ou null | Data/hora de finalização. |
 | `erro` | string ou null | Mensagem de erro persistida. |
@@ -123,8 +123,10 @@ Response:
 | Campo | Tipo | Descrição |
 | --- | --- | --- |
 | `id` | integer | Identificador do contato. |
-| `email` | string | E-mail normalizado em minúsculas. |
-| `pagina_origem` | string | Página onde o e-mail foi encontrado. |
+| `tipo` | string | Tipo do contato extraído, como `email`, `telefone`, `whatsapp`, `instagram` ou `linkedin`. |
+| `valor` | string | Valor normalizado do contato. |
+| `email` | string ou null | E-mail normalizado quando `tipo = email`; `null` para outros tipos. |
+| `pagina_origem` | string | Página onde o contato foi encontrado. |
 
 ## Endpoints
 
@@ -221,7 +223,7 @@ curl -s http://127.0.0.1:8010/varreduras | jq
     "url": "http://127.0.0.1:8765/index.html",
     "status": "concluida",
     "quantidade_paginas": 2,
-    "quantidade_contatos": 3,
+    "quantidade_contatos": 8,
     "inicio": "2026-08-22T22:02:52.822812",
     "fim": "2026-08-22T22:02:56.709928",
     "erro": null
@@ -248,7 +250,7 @@ curl -s http://127.0.0.1:8010/varreduras/1 | jq
   "url": "http://127.0.0.1:8765/index.html",
   "status": "concluida",
   "quantidade_paginas": 2,
-  "quantidade_contatos": 3,
+  "quantidade_contatos": 8,
   "inicio": "2026-08-22T22:02:52.822812",
   "fim": "2026-08-22T22:02:56.709928",
   "erro": null
@@ -279,17 +281,58 @@ curl -s http://127.0.0.1:8010/varreduras/1/contatos | jq
 [
   {
     "id": 1,
+    "tipo": "email",
+    "valor": "contato@empresateste.com.br",
     "email": "contato@empresateste.com.br",
     "pagina_origem": "http://127.0.0.1:8765/index.html"
   },
   {
     "id": 2,
+    "tipo": "telefone",
+    "valor": "+551140028922",
+    "email": null,
+    "pagina_origem": "http://127.0.0.1:8765/index.html"
+  },
+  {
+    "id": 3,
+    "tipo": "instagram",
+    "valor": "https://www.instagram.com/empresa.teste",
+    "email": null,
+    "pagina_origem": "http://127.0.0.1:8765/index.html"
+  },
+  {
+    "id": 4,
+    "tipo": "email",
+    "valor": "comercial@empresateste.com.br",
+    "email": "comercial@empresateste.com.br",
+    "pagina_origem": "http://127.0.0.1:8765/contato.html"
+  },
+  {
+    "id": 5,
+    "tipo": "email",
+    "valor": "suporte@empresateste.com.br",
     "email": "suporte@empresateste.com.br",
     "pagina_origem": "http://127.0.0.1:8765/contato.html"
   },
   {
-    "id": 3,
-    "email": "comercial@empresateste.com.br",
+    "id": 6,
+    "tipo": "telefone",
+    "valor": "+5511912345678",
+    "email": null,
+    "pagina_origem": "http://127.0.0.1:8765/contato.html"
+  },
+  {
+    "id": 7,
+    "tipo": "whatsapp",
+    "valor": "+5511912345678",
+    "email": null,
+    "pagina_origem": "http://127.0.0.1:8765/contato.html"
+  },
+  {
+    "id": 8,
+    "tipo": "linkedin",
+    "valor": "https://www.linkedin.com/company/empresa-teste",
+    "email": null,
     "pagina_origem": "http://127.0.0.1:8765/contato.html"
   }
 ]
@@ -353,11 +396,13 @@ done
 ## Observações de comportamento
 
 - E-mails são normalizados para minúsculas.
-- E-mails duplicados na mesma varredura são ignorados.
+- Telefones brasileiros são normalizados com código do país, por exemplo `+5511912345678`.
+- Links sociais são salvos sem parâmetros de rastreamento.
+- Contatos duplicados na mesma varredura são ignorados por `tipo` e `valor`.
 - A URL inicial fica salva na própria varredura.
 - A entidade `Site` representa o domínio.
 - A entidade `Varredura` representa uma execução específica.
-- A entidade `Contato` representa um e-mail encontrado em uma varredura.
+- A entidade `Contato` representa um dado público encontrado em uma varredura.
 - O subprocesso do Scrapy tem timeout de 120 segundos.
 - Mensagens de erro longas são limitadas antes de serem persistidas.
 

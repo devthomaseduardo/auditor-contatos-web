@@ -10,12 +10,25 @@ class RelatorioVarredura:
 
         self.paginas_visitadas = set()
         self.emails_encontrados = set()
+        self.contatos_encontrados = set()
 
     def adicionar_pagina(self, url):
         self.paginas_visitadas.add(url)
 
     def adicionar_email(self, email):
         self.emails_encontrados.add(email)
+        self.adicionar_contato(
+            "email",
+            email,
+        )
+
+    def adicionar_contato(self, tipo, valor):
+        self.contatos_encontrados.add(
+            (
+                tipo,
+                valor,
+            )
+        )
 
     def finalizar(self):
         self.fim = datetime.now(timezone.utc)
@@ -29,12 +42,24 @@ class RelatorioVarredura:
             "quantidade_emails": len(
                 self.emails_encontrados
             ),
+            "quantidade_contatos": len(
+                self.contatos_encontrados
+            ),
             "paginas_visitadas": sorted(
                 self.paginas_visitadas
             ),
             "emails_encontrados": sorted(
                 self.emails_encontrados
             ),
+            "contatos_encontrados": [
+                {
+                    "tipo": tipo,
+                    "valor": valor,
+                }
+                for tipo, valor in sorted(
+                    self.contatos_encontrados
+                )
+            ],
             "inicio": self.inicio.isoformat(),
             "fim": (
                 self.fim.isoformat()

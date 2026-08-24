@@ -1,3 +1,5 @@
+import hashlib
+
 from datetime import datetime, timezone
 
 from scrapy.exceptions import DropItem
@@ -19,6 +21,7 @@ class AuditorPipeline:
 
         instancia.crawler = crawler
         instancia.emails_processados = set()
+        instancia.contatos_processados = set()
         instancia.sessao = None
         instancia.site = None
         instancia.varredura = None
@@ -96,31 +99,61 @@ class AuditorPipeline:
     def process_item(self, item):
         spider = self.crawler.spider
 
-        email = item.get("email")
+        tipo = (
+            item.get("tipo")
+            or (
+                "email"
+                if item.get("email")
+                else None
+            )
+        )
+        valor = (
+            item.get("valor")
+            or item.get("email")
+        )
         pagina_origem = item.get(
             "pagina_origem"
         )
 
-        if not email:
+        if not tipo or not valor:
             return item
 
-        email = email.strip().lower()
+        tipo = tipo.strip().lower()
+        valor = valor.strip()
 
-        if email in self.emails_processados:
+        if tipo == "email":
+            valor = valor.lower()
+
+        chave = (
+            tipo,
+            valor,
+        )
+
+        if chave in self.contatos_processados:
             spider.logger.info(
-                f"E-mail duplicado ignorado: "
-                f"{email}"
+                f"Contato duplicado ignorado: "
+                f"{tipo} {valor}"
             )
 
             raise DropItem(
-                f"E-mail duplicado: {email}"
+                f"Contato duplicado: {tipo} {valor}"
             )
 
-        self.emails_processados.add(email)
+        self.contatos_processados.add(chave)
+
+        if tipo == "email":
+            self.emails_processados.add(valor)
+
+        email_legado = self.gerar_email_legado(
+            tipo,
+            valor,
+        )
 
         contato = Contato(
             varredura_id=self.varredura.id,
-            email=email,
+            email=email_legado,
+            tipo=tipo,
+            valor=valor,
             pagina_origem=pagina_origem,
         )
 
@@ -132,16 +165,36 @@ class AuditorPipeline:
             self.sessao.rollback()
 
             raise DropItem(
-                f"E-mail duplicado no banco: {email}"
+                (
+                    "Contato duplicado no banco: "
+                    f"{tipo} {valor}"
+                )
             ) from erro
 
-        item["email"] = email
+        item["tipo"] = tipo
+        item["valor"] = valor
+
+        if tipo == "email":
+            item["email"] = valor
+        else:
+            item.pop("email", None)
 
         spider.logger.info(
-            f"E-mail salvo no banco: {email}"
+            f"Contato salvo no banco: {tipo} {valor}"
         )
 
         return item
+
+    @staticmethod
+    def gerar_email_legado(tipo, valor):
+        if tipo == "email":
+            return valor
+
+        digest = hashlib.sha256(
+            f"{tipo}:{valor}".encode("utf-8")
+        ).hexdigest()[:32]
+
+        return f"{tipo}:{digest}"
 
     def close_spider(self):
         spider = self.crawler.spider
@@ -165,7 +218,7 @@ class AuditorPipeline:
             quantidade_paginas
         )
         self.varredura.quantidade_contatos = (
-            len(self.emails_processados)
+            len(self.contatos_processados)
         )
         self.varredura.fim = datetime.now(
             timezone.utc
@@ -196,7 +249,7 @@ class AuditorPipeline:
         )
 
         spider.logger.info(
-            f"{len(self.emails_processados)} "
+            f"{len(self.contatos_processados)} "
             f"contatos salvos"
         )
 

@@ -88,8 +88,9 @@ def criar_tabelas():
     Base.metadata.create_all(bind=engine)
 
     inspetor = inspect(engine)
+    tabelas = inspetor.get_table_names()
 
-    if "varreduras" not in inspetor.get_table_names():
+    if "varreduras" not in tabelas:
         return
 
     colunas = {
@@ -115,5 +116,40 @@ def criar_tabelas():
                     "WHERE sites.id = varreduras.site_id"
                     ") "
                     "WHERE url_inicial IS NULL"
+                )
+            )
+
+    if "contatos" not in tabelas:
+        return
+
+    colunas_contatos = {
+        coluna["name"]
+        for coluna in inspetor.get_columns(
+            "contatos"
+        )
+    }
+
+    with engine.begin() as conexao:
+        if "tipo" not in colunas_contatos:
+            conexao.execute(
+                text(
+                    "ALTER TABLE contatos "
+                    "ADD COLUMN tipo VARCHAR(50) "
+                    "DEFAULT 'email' NOT NULL"
+                )
+            )
+
+        if "valor" not in colunas_contatos:
+            conexao.execute(
+                text(
+                    "ALTER TABLE contatos "
+                    "ADD COLUMN valor VARCHAR(500)"
+                )
+            )
+            conexao.execute(
+                text(
+                    "UPDATE contatos "
+                    "SET valor = email "
+                    "WHERE valor IS NULL"
                 )
             )
